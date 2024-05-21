@@ -9,7 +9,6 @@ logging.basicConfig(
     filename="studyDate.log",
 )
 
-url="https://northcountrychapel.com/wp-json/wp/v2/posts?categories=48&per_page=1"
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
 }
@@ -34,10 +33,3 @@ def getName(url):
 
     else:
         logging.error(f"Error: {response.status_code} - {response.reason}")
-
-# try: 
-#     logging.info("Starting script")
-#     studies = getAPI(url)
-
-# except Exception as e:
-#     logging.error(e)
