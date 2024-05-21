@@ -9,3 +9,7 @@ logging.basicConfig(
     filename="updateWP.log",
 )
 
+#TODO: log in to wp
+#TODO: get correct post to update
+#TODO: get vimeo embed
+#TODO: update post
