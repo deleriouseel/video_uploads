@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s %(levelname)s %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     filename="vimeoUpload.log",
@@ -20,38 +20,31 @@ headers = {
     }
 
 
-# headers = {
-#     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-# }
-
-
 def getPost(url):
-    logging.info("Getting post from wordpress")
+    logging.info("Getting post from wordpress api")
     response = requests.get(url,headers=headers)
     if response.status_code == 200:
         post = response.json()[0]
+        return post
     else:
         logging.error(f"Error: {response.status_code} - {response.reason}")   
 
-    return post     
+      
 
-def getName(url):
+def getName(post):
     logging.info("Getting file name from wordpress post")
-    response = requests.get(url,headers=headers)
-    if response.status_code == 200:
-        study = response.json()[0]
-        post_date = study['date']
-        post_date = datetime.strptime(post_date, "%Y-%m-%dT%H:%M:%S").date()
-        today = datetime.today().date()
+    post_date = post['date']
+    post_date = datetime.strptime(post_date, "%Y-%m-%dT%H:%M:%S").date()
+    today = datetime.today().date()
 
-        if post_date == today:
-            post = response.json()
-            post_title = post["title"]["rendered"]
-            logging.info(post_title)
-            return post_title
-        else:
-            logging.error("No post matching today's date found.")
-            return str(today)
-
+    if post_date == today:
+        post_title = post["title"]["rendered"]
+        logging.info(post_title)
+        return post_title
     else:
-        logging.error(f"Error: {response.status_code} - {response.reason}")
+        logging.error("No post matching today's date found. Returning today's date.")
+        return str(today)
+
+# post = getPost(url)
+# post_title = getName(post)
+# print(post_title)
