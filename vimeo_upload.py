@@ -4,6 +4,7 @@ import wp_get
 import re
 import time
 import logging
+import datetime
 from dotenv import load_dotenv
 
 logging.basicConfig(
@@ -14,6 +15,25 @@ logging.basicConfig(
 )
 
 load_dotenv()
+today = datetime.date.today()
+
+# Test video to upload
+desktop = os.path.expanduser("~/Desktop")
+video = desktop + "/thurber.eric.mp4"
+
+# Get video to upload from local computer
+def getUploadVideo():
+    video_folder = r'\\Streaming-pc\d'
+    available_files = os.listdir(video_folder)
+    for file in available_files:
+        file_path = os.path.join(video_folder, file)
+        if os.path.isfile(file_path):
+            created_date = datetime.date.fromtimestamp(os.path.getctime(file_path))
+            if created_date == today:
+                return file
+            else: 
+                logging.error("No available videos")
+
 
 
 def uploadVimeo(video):
@@ -72,6 +92,12 @@ def getVideoInfo(post_title):
       key=os.getenv("VIMEO_KEY"),
       secret=os.getenv("VIMEO_SECRET"),
     )
-
-  video_info = client.get(f"https://api.vimeo.com/users/75458348/videos?page=1&per_page=2&sort=date&query_fields=title&query={post_title}").json()
-  return video_info
+  try:
+    video_info = client.get(f"https://api.vimeo.com/users/75458348/videos?page=1&per_page=2&sort=date&query_fields=title&query={post_title}").json()
+    if video_info["total"] != 0:
+      return video_info
+    else:
+       logging.error("No video found")
+  
+  except:
+    logging.error("Failed to retrieve video info")
