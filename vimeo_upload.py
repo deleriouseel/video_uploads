@@ -34,7 +34,7 @@ def getUploadVideo():
             else: 
                 logging.error("No available videos")
 
-
+#TODO: send getUploadVideo to uploadVimeo
 
 def uploadVimeo(video):
   client = vimeo.VimeoClient(
