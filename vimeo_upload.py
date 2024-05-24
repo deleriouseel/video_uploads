@@ -1,6 +1,6 @@
 import vimeo
 import os
-import get_wp_title
+import wp_get
 import re
 import time
 import logging
@@ -23,7 +23,7 @@ def uploadVimeo(video):
       secret=os.getenv("VIMEO_SECRET"),
     )
 
-  upload_name = get_wp_title.getName(os.getenv("WP_API_URL"))
+  upload_name = wp_get.getName(os.getenv("WP_API_URL"))
   logging.info(f"Starting {video} upload")
   tags = ["northcountrychapel", "ncc", "biblestudy"]
   regex = r'\b(?:[1-3]?\s?[a-zA-Z]+\s?[A-Za-z]*)\b'
