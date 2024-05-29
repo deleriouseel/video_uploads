@@ -44,7 +44,3 @@ def getName(post):
     else:
         logging.error("No post matching today's date found. Returning today's date.")
         return str(today)
-
-# post = getPost(url)
-# post_title = getName(post)
-# print(post_title)

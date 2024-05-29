@@ -4,7 +4,7 @@ import os
 import json
 import datetime
 from dotenv import load_dotenv
-from vimeo_upload import getVideoInfo
+from vimeo_upload import getVideoInfo, uploadCheck, getUploadVideo, uploadVimeo
 from wp_get import getPost
 
 
@@ -27,39 +27,69 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
     }
 
+
+
 #TODO: Check if video has finished uploading
+def updatePost():
+    """Update a WordPress post with Vimeo video iframe.
 
+    This fetches info about the latest WordPress post from the "bible study" category,
+    uploads a video file to Vimeo, retrieves the iframe content for the uploaded video,
+    and updates the WordPress post with the video embed code if the post's date matches today's date.
+    """
 
-# Get title, date from WP post
-post = getPost(os.getenv("WP_API_URL") + "posts?categories=48&per_page=1")
-post_title = post["title"]
-post_date = post["date"][0:10]
-
-# Get video id, embed code, title from Vimeo
-video_info = getVideoInfo(post_title)
-video_id = video_info["uri"][-9:]
-embed_code = video_info["embed"]["html"]
-vimeo_title = video_info["title"]
-
-logging.debug("Video ID: " + video_id)
-logging.debug("Embed code: " + embed_code)
-logging.debug("Title: " + vimeo_title)
-
-# Update the contents of the WP post
-if post_date == today:
-        post_title = post["title"]["rendered"]
-        post_id = post["id"]
-        post_content = post["content"]
-        updated_content = post_content,"/n",embed_code
-
-        payload = json.dumps({
-        "content": updated_content
-        })
-        if vimeo_title == post_title:
-            response = requests.put(f"{url}/posts/{post_id}", headers=headers, auth=(username, password), data=payload)
-            
+    try:
+        # Get WP info
+        post = getPost(os.getenv("WP_API_URL") + "posts?categories=48&per_page=1")
+        if post is None:
+            logging.error("Failed to retrieve post from WordPress API")
+            return None, None
+        #Get video location
+        upload_file = getUploadVideo()
+        if upload_file:
+            logging.info(f"Video file to upload: {upload_file}")
         else:
-             logging.error("Titles don't match")
-else:
-    logging.error("No post matching today's date found. Returning today's date.")
+            logging.error("No video file found.")
 
+        # Upload video
+        uri = uploadVimeo(upload_file)
+
+        # Check upload succeeded
+        uploadCheck(uri)
+        video_info = getVideoInfo(uri)
+       
+
+        # Get date from WP post
+        post_date = post["date"][0:10]
+        post_title = post["title"]
+
+        # Get video id, embed code, title from Vimeo
+        video_id = video_info["uri"][-9:]
+        embed_code = video_info["embed"]["html"]
+        vimeo_title = video_info["name"]
+
+        logging.debug(f"Video ID: {video_id}")
+        logging.debug(f"Embed code: {embed_code}")
+        logging.debug(f"Title: {vimeo_title}")
+
+        if post_date == today:
+            post_id = post["id"]
+            post_content = post["content"]["rendered"]
+
+            payload = json.dumps({
+            "content": post_content + embed_code
+            })
+        else:
+            logging.error("No post matching today's date found.")
+
+        if vimeo_title == post_title:
+            response = requests.put(f"{url}posts/{post_id}", headers=headers, auth=(username, password), data=payload)
+            logging.info(f"Post updated successfully: {response.text}")
+        else:
+            logging.debug("Titles don't match")
+
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")   
+
+   
+updatePost()
