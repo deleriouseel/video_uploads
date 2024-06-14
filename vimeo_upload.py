@@ -20,6 +20,7 @@ today = datetime.date.today()
 def getUploadVideo():
     logging.debug("Starting getUploadVideo")
     video_folder = r'\\Streaming-pc\d'
+    closest_delta = None
     
     try:
         available_files = os.listdir(video_folder)
@@ -69,30 +70,42 @@ def uploadVimeo(video):
 
   # Get the upload name
   upload_name = getName(post)
+  logging.debug(f"Incoming upload_name: {upload_name}")
   if upload_name is None:
       logging.error("Failed to get upload name from getName.")
       return None
-  
+  logging.debug(f"Post title: {upload_name}")
   logging.info(f"Starting {video} upload")
   tags = ["northcountrychapel", "ncc", "biblestudy"]
   regex = r'\b(?:[1-3]?\s?[a-zA-Z]+\s?[A-Za-z]*)\b'
-  book_name = re.search(upload_name, regex)
-  book_name_str = book_name.group(0) if book_name else "Unknown"
+  book_name = re.search(regex, upload_name).group(0)
 
   video = getUploadVideo()
 
   try:
     uri = client.upload(video, data={
       'name': upload_name,
-      'description': f'Join us as we study through the book of {book_name_str}',
       'privacy': {
-          'view': 'nobody'  # prod = anybody
+          'view': 'anybody'
       },
         'content-rating': 'safe',
         "license": "by-nc-sa",
         "tags": tags,
     })
     logging.info(f"Finished upload. Video uri is {uri}")
+    video_id = uri.split('/')[-1]
+
+    # Prepare the PATCH request data to update the title
+    patch_data = {
+        'name': upload_name  # Desired title with special characters
+    }
+    response = client.patch(f'/videos/{video_id}', data=patch_data)
+
+    if response.status_code == 200:
+        logging.info(f"Title updated successfully to: {upload_name}")
+    else:
+        logging.error(f"Failed to update the title. Response: {response.json()}")
+
     return uri
   except Exception as e:
     logging.error(f"An error occurred during the upload: {str(e)}")
