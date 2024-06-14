@@ -3,6 +3,7 @@ import requests
 import os
 import json
 import datetime
+import re
 from dotenv import load_dotenv
 from vimeo_upload import getVideoInfo, uploadCheck, getUploadVideo, uploadVimeo
 from wp_get import getPost
@@ -61,7 +62,10 @@ def updatePost():
 
         # Get date from WP post
         post_date = post["date"][0:10]
-        post_title = post["title"]
+        post_title = post["title"]["rendered"]
+
+        logging.debug(f"Post date: {post_date}")
+        logging.debug(f"Post title: {post_title}")
 
         # Get video id, embed code, title from Vimeo
         video_id = video_info["uri"][-9:]
@@ -70,24 +74,23 @@ def updatePost():
 
         logging.debug(f"Video ID: {video_id}")
         logging.debug(f"Embed code: {embed_code}")
-        logging.debug(f"Title: {vimeo_title}")
+        logging.debug(f"Video Title: {vimeo_title}")
 
-        if post_date == today:
-            post_id = post["id"]
-            post_content = post["content"]["rendered"]
+        post_id = post["id"]
+        post_content = post["content"]["rendered"]
+        post_content= re.sub(r'[\r\n]+', '\n', post_content)
 
-            payload = json.dumps({
+        payload = json.dumps({
             "content": post_content + embed_code
             })
-        else:
-            logging.error("No post matching today's date found.")
+        
 
         if vimeo_title == post_title:
             response = requests.put(f"{url}posts/{post_id}", headers=headers, auth=(username, password), data=payload)
             logging.info(f"Post updated successfully: {response.text}")
         else:
             logging.debug("Titles don't match")
-
+        
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")   
 
